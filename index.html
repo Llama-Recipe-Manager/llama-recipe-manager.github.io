@@ -4,109 +4,180 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Llama Recipe Manager — Native Desktop Launcher for llama-server</title>
-  <meta name="description" content="Save your llama.cpp invocations as named recipes, switch between them in one click. A native, fast, batteries-included desktop launcher for llama-server." />
+  <meta name="description" content="Save your llama.cpp invocations as named recipes, switch between them in one click." />
   <meta property="og:title" content="Llama Recipe Manager" />
-  <meta property="og:description" content="Native desktop launcher for llama-server. Recipe-first workflow, local-first, cross-platform." />
+  <meta property="og:description" content="Save your llama.cpp invocations as named recipes, switch between them in one click." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="https://raw.githubusercontent.com/Llama-Recipe-Manager/llama-recipe-manager/main/docs/assets/icon.png" type="image/png" />
+  <link rel="icon" href="icon.png" type="image/png" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0a;
-      --surface: #141414;
-      --border: #222;
+      --bg: #050505;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.06);
       --text: #e5e5e5;
-      --text-dim: #888;
+      --text-dim: #666;
       --accent: #24C8DB;
-      --accent-dim: rgba(36, 200, 219, 0.1);
-      --radius: 12px;
+      --purple: #a78bfa;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
       min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(36,200,219,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .container {
-      max-width: 960px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Nav */
+    nav {
+      padding: 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
     }
 
     /* Hero */
     .hero {
-      padding: 120px 0 80px;
+      padding: 80px 0 100px;
       text-align: center;
-      position: relative;
-      overflow: hidden;
     }
 
-    .hero::before {
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      background: rgba(36,200,219,0.08);
+      border: 1px solid rgba(36,200,219,0.15);
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+
+    .hero-badge::before {
       content: '';
-      position: absolute;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(36, 200, 219, 0.08) 0%, transparent 70%);
-      pointer-events: none;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
     }
 
     .hero-icon {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 32px;
-      border-radius: 28px;
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      margin: 0 auto 32px;
+      overflow: hidden;
       background: var(--surface);
       border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 56px;
-      position: relative;
-      z-index: 1;
+      padding: 14px;
+    }
+
+    .hero-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .hero h1 {
-      font-size: 3rem;
+      font-size: 3.5rem;
       font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 16px;
-      position: relative;
-      z-index: 1;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 20px;
     }
 
-    .hero h1 span {
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
     .hero p {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       color: var(--text-dim);
-      max-width: 560px;
+      max-width: 500px;
       margin: 0 auto 40px;
-      position: relative;
-      z-index: 1;
     }
 
     .hero-actions {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
-      position: relative;
-      z-index: 1;
     }
 
     .btn {
@@ -115,11 +186,10 @@
       gap: 8px;
       padding: 12px 24px;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 500;
       text-decoration: none;
       transition: all 0.2s;
-      border: 1px solid transparent;
     }
 
     .btn-primary {
@@ -129,102 +199,303 @@
 
     .btn-primary:hover {
       background: #1fb8c9;
+      transform: translateY(-1px);
     }
 
     .btn-secondary {
       background: var(--surface);
-      border-color: var(--border);
+      border: 1px solid var(--border);
       color: var(--text);
     }
 
     .btn-secondary:hover {
-      border-color: #444;
-      background: #1a1a1a;
+      border-color: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
     }
 
-    /* Badges */
-    .badges {
+    /* Tech stack */
+    .stack {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 32px;
-      position: relative;
-      z-index: 1;
+      margin-top: 40px;
     }
 
-    .badge {
-      padding: 4px 12px;
-      border-radius: 99px;
+    .stack-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 0.8rem;
+      color: var(--text-dim);
+      padding: 4px 12px;
+      border-radius: 6px;
       background: var(--surface);
       border: 1px solid var(--border);
-      color: var(--text-dim);
     }
+
+    /* Recipe visual */
+    .recipe-visual {
+      margin: 80px auto 0;
+      max-width: 700px;
+    }
+
+    .recipe-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .recipe-titlebar {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .recipe-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .recipe-dot:nth-child(1) { background: #ff5f57; }
+    .recipe-dot:nth-child(2) { background: #ffbd2e; }
+    .recipe-dot:nth-child(3) { background: #28c840; }
+
+    .recipe-body {
+      padding: 20px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .recipe-sidebar {
+      width: 160px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .recipe-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      cursor: default;
+    }
+
+    .recipe-item.active {
+      background: rgba(36,200,219,0.1);
+      color: var(--accent);
+    }
+
+    .recipe-item .recipe-name {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .recipe-item .recipe-meta {
+      font-size: 0.72rem;
+      opacity: 0.6;
+    }
+
+    .recipe-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .recipe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recipe-header h4 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .recipe-run-btn {
+      padding: 6px 16px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #000;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .recipe-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .recipe-flag {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .recipe-flag.highlight {
+      border-color: rgba(36,200,219,0.2);
+      color: var(--accent);
+      background: rgba(36,200,219,0.06);
+    }
+
+    .recipe-metrics {
+      display: flex;
+      gap: 16px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .metric-value.green { color: #28c840; }
+    .metric-value.cyan { color: var(--accent); }
 
     /* Features */
     .features {
-      padding: 80px 0;
+      padding: 100px 0;
     }
 
-    .features h2 {
+    .features-header {
       text-align: center;
-      font-size: 1.75rem;
-      font-weight: 600;
-      margin-bottom: 48px;
+      margin-bottom: 56px;
+    }
+
+    .features-header h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .features-header p {
+      color: var(--text-dim);
+      font-size: 1.05rem;
     }
 
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
 
     .feature-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 12px;
       padding: 28px;
-      transition: border-color 0.2s;
+      transition: all 0.25s;
     }
 
     .feature-card:hover {
-      border-color: #333;
+      border-color: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
     }
 
-    .feature-card .icon {
-      font-size: 28px;
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
       margin-bottom: 16px;
+      background: rgba(36,200,219,0.08);
+      border: 1px solid rgba(36,200,219,0.12);
     }
 
     .feature-card h3 {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 600;
       margin-bottom: 8px;
     }
 
     .feature-card p {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       color: var(--text-dim);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
-    /* CTA */
-    .cta {
+    /* Install */
+    .install {
       padding: 80px 0 120px;
+    }
+
+    .install-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .install-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
       text-align: center;
     }
 
-    .cta h2 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 16px;
+    .install-card .platform-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
     }
 
-    .cta p {
+    .install-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .install-card .formats {
+      font-size: 0.8rem;
       color: var(--text-dim);
-      margin-bottom: 32px;
-      font-size: 1.1rem;
+    }
+
+    .install-card .formats span {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-family: monospace;
+      margin: 2px 2px;
+    }
+
+    .install-actions {
+      text-align: center;
     }
 
     /* Footer */
@@ -233,102 +504,194 @@
       padding: 32px 0;
       text-align: center;
       color: var(--text-dim);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
     }
 
     footer a {
       color: var(--text-dim);
       text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.1);
     }
 
-    @media (max-width: 640px) {
+    footer a:hover {
+      text-decoration-color: rgba(255,255,255,0.3);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+      .recipe-sidebar { display: none; }
+    }
+
+    @media (max-width: 480px) {
       .hero h1 { font-size: 2rem; }
-      .hero p { font-size: 1.05rem; }
-      .hero { padding: 80px 0 60px; }
+      .hero-actions { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
 <body>
-  <div class="hero">
-    <div class="container">
-      <div class="hero-icon">🦙</div>
-      <h1><span>Llama Recipe Manager</span></h1>
-      <p>A native, fast, batteries-included desktop launcher for llama-server. Save your invocations as named recipes and switch between them in one click.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
-          Download
-        </a>
-        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">
-          View Source
-        </a>
+  <div class="container">
+    <nav>
+      <a href="#" class="nav-brand">
+        <img src="icon.png" alt="Llama Recipe Manager" />
+        Llama Recipe Manager
+      </a>
+      <div class="nav-links">
+        <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">Source</a>
+        <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Releases</a>
       </div>
-      <div class="badges">
-        <span class="badge">Tauri 2</span>
-        <span class="badge">Svelte 5</span>
-        <span class="badge">Rust</span>
-        <span class="badge">macOS</span>
-        <span class="badge">Linux</span>
-        <span class="badge">Windows</span>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-badge">v0.2.0 — Latest Release</div>
+      <div class="hero-icon">
+        <img src="icon.png" alt="Llama Recipe Manager" />
+      </div>
+      <h1><span class="gradient">Llama Recipe Manager</span></h1>
+      <p>Your llama-server configurations, saved as named recipes. Switch models and GPU layouts in one click — no flag juggling.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Download</a>
+        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">View Source</a>
+      </div>
+      <div class="stack">
+        <span class="stack-item">Rust</span>
+        <span class="stack-item">Tauri 2</span>
+        <span class="stack-item">Svelte 5</span>
+        <span class="stack-item">SQLite</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Recipe visual mockup -->
+  <div class="container">
+    <div class="recipe-visual">
+      <div class="recipe-window">
+        <div class="recipe-titlebar">
+          <div class="recipe-dot"></div>
+          <div class="recipe-dot"></div>
+          <div class="recipe-dot"></div>
+        </div>
+        <div class="recipe-body">
+          <div class="recipe-sidebar">
+            <div class="recipe-item active">
+              <div class="recipe-name">🦙 Mistral 7B</div>
+              <div class="recipe-meta">8k context · 4-bit</div>
+            </div>
+            <div class="recipe-item">
+              <div class="recipe-name">🦙 Llama 3.3 70B</div>
+              <div class="recipe-meta">128k context · Q4</div>
+            </div>
+            <div class="recipe-item">
+              <div class="recipe-name">🦙 CodeLlama 13B</div>
+              <div class="recipe-meta">16k context · 8-bit</div>
+            </div>
+            <div class="recipe-item">
+              <div class="recipe-name">🦙 Gemma 2 9B</div>
+              <div class="recipe-meta">8k context · 4-bit</div>
+            </div>
+          </div>
+          <div class="recipe-main">
+            <div class="recipe-header">
+              <h4>Mistral 7B</h4>
+              <div class="recipe-run-btn">▶ Run</div>
+            </div>
+            <div class="recipe-flags">
+              <span class="recipe-flag highlight">--model ./models/mistral-7b.Q4_K_M.gguf</span>
+              <span class="recipe-flag">--ctx-size 8192</span>
+              <span class="recipe-flag">--gpu-layers 35</span>
+              <span class="recipe-flag">--mlock</span>
+              <span class="recipe-flag">--threads 8</span>
+              <span class="recipe-flag">--batch-size 512</span>
+            </div>
+            <div class="recipe-metrics">
+              <div class="metric">
+                <span class="metric-label">GPU</span>
+                <span class="metric-value green">72%</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Memory</span>
+                <span class="metric-value cyan">5.2 GB</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Speed</span>
+                <span class="metric-value green">42 tok/s</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Temperature</span>
+                <span class="metric-value">0.7</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <section class="features">
     <div class="container">
-      <h2>Why Llama Recipe Manager?</h2>
+      <div class="features-header">
+        <h2>Why this exists</h2>
+        <p>Stop memorizing flags. Start managing recipes.</p>
+      </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="icon">📦</div>
-          <h3>Recipe-first workflow</h3>
-          <p>Each saved recipe is a named bundle of llama-server flags. Switch models, contexts, and GPU layouts in one click.</p>
+          <div class="feature-icon">📦</div>
+          <h3>Named Recipes</h3>
+          <p>Save each llama-server invocation as a named recipe. Switch between Mistral, Llama, and CodeLlama setups with a single click.</p>
         </div>
         <div class="feature-card">
-          <div class="icon">🔒</div>
-          <h3>Local-first</h3>
-          <p>No account, no telemetry, no network dependency. Your recipes live in a SQLite database on your machine.</p>
+          <div class="feature-icon">🔒</div>
+          <h3>Your Data Stays Local</h3>
+          <p>No account. No telemetry. No network calls. Every recipe lives in a SQLite database on your machine — yours, and yours alone.</p>
         </div>
         <div class="feature-card">
-          <div class="icon">🛡️</div>
-          <h3>Safety rails</h3>
-          <p>Flag deny-list prevents conflicting arguments. Relative model paths are confined to your configured model directory.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">🌍</div>
-          <h3>Cross-platform</h3>
-          <p>Native desktop experience on macOS, Linux, and Windows. Honours your system theme everywhere.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">📊</div>
-          <h3>Live metrics</h3>
-          <p>Real-time GPU, memory, and throughput stats right in the app. No need to check external tools.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon">⚡</div>
-          <h3>Auto-updates</h3>
-          <p>Signed, silent background updates via GitHub Releases. Stay current without manual downloads.</p>
+          <div class="feature-icon">🛡️</div>
+          <h3>Safety by Default</h3>
+          <p>A flag deny-list blocks arguments that conflict with app-managed settings. Model paths are confined to your configured directory.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="cta">
+  <section class="install">
     <div class="container">
-      <h2>Ready to get started?</h2>
-      <p>Download the latest release or build from source.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
-          Download v0.2.0
-        </a>
-        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager#install">
-          Build from source
-        </a>
+      <div class="install-grid">
+        <div class="install-card">
+          <div class="platform-icon">🍎</div>
+          <h4>macOS</h4>
+          <div class="formats">
+            <span>.dmg</span>
+            <span>.tar.gz</span>
+          </div>
+        </div>
+        <div class="install-card">
+          <div class="platform-icon">🐧</div>
+          <h4>Linux</h4>
+          <div class="formats">
+            <span>.deb</span>
+            <span>.rpm</span>
+            <span>.AppImage</span>
+          </div>
+        </div>
+        <div class="install-card">
+          <div class="platform-icon">🪟</div>
+          <h4>Windows</h4>
+          <div class="formats">
+            <span>.msi</span>
+            <span>.exe</span>
+          </div>
+        </div>
+      </div>
+      <div class="install-actions">
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Download v0.2.0</a>
       </div>
     </div>
   </section>
 
   <footer>
     <div class="container">
-      <p>MIT &copy; 2026 Mohammad Ashar Khan. Built on <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://tauri.app">Tauri</a>, and <a href="https://kit.svelte.dev">SvelteKit</a>.</p>
+      <p>MIT &copy; 2026 Mohammad Ashar Khan — Built on <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://tauri.app">Tauri</a>, <a href="https://kit.svelte.dev">SvelteKit</a></p>
     </div>
   </footer>
 </body>
