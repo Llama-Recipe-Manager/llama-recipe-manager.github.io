@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Llama Recipe Manager — Native Desktop Launcher for llama-server</title>
+  <meta name="description" content="Save your llama.cpp invocations as named recipes, switch between them in one click. A native, fast, batteries-included desktop launcher for llama-server." />
+  <meta property="og:title" content="Llama Recipe Manager" />
+  <meta property="og:description" content="Native desktop launcher for llama-server. Recipe-first workflow, local-first, cross-platform." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="https://raw.githubusercontent.com/Llama-Recipe-Manager/llama-recipe-manager/main/docs/assets/icon.png" type="image/png" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: #222;
+      --text: #e5e5e5;
+      --text-dim: #888;
+      --accent: #24C8DB;
+      --accent-dim: rgba(36, 200, 219, 0.1);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 120px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(36, 200, 219, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-icon {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 32px;
+      border-radius: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 56px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #1fb8c9;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      border-color: #444;
+      background: #1a1a1a;
+    }
+
+    /* Badges */
+    .badges {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    /* Features */
+    .features {
+      padding: 80px 0;
+    }
+
+    .features h2 {
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: #333;
+    }
+
+    .feature-card .icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* CTA */
+    .cta {
+      padding: 80px 0 120px;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      color: var(--text-dim);
+      margin-bottom: 32px;
+      font-size: 1.1rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--text-dim);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1.05rem; }
+      .hero { padding: 80px 0 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="container">
+      <div class="hero-icon">🦙</div>
+      <h1><span>Llama Recipe Manager</span></h1>
+      <p>A native, fast, batteries-included desktop launcher for llama-server. Save your invocations as named recipes and switch between them in one click.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
+          Download
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">
+          View Source
+        </a>
+      </div>
+      <div class="badges">
+        <span class="badge">Tauri 2</span>
+        <span class="badge">Svelte 5</span>
+        <span class="badge">Rust</span>
+        <span class="badge">macOS</span>
+        <span class="badge">Linux</span>
+        <span class="badge">Windows</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="features">
+    <div class="container">
+      <h2>Why Llama Recipe Manager?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon">📦</div>
+          <h3>Recipe-first workflow</h3>
+          <p>Each saved recipe is a named bundle of llama-server flags. Switch models, contexts, and GPU layouts in one click.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔒</div>
+          <h3>Local-first</h3>
+          <p>No account, no telemetry, no network dependency. Your recipes live in a SQLite database on your machine.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🛡️</div>
+          <h3>Safety rails</h3>
+          <p>Flag deny-list prevents conflicting arguments. Relative model paths are confined to your configured model directory.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🌍</div>
+          <h3>Cross-platform</h3>
+          <p>Native desktop experience on macOS, Linux, and Windows. Honours your system theme everywhere.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>Live metrics</h3>
+          <p>Real-time GPU, memory, and throughput stats right in the app. No need to check external tools.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>Auto-updates</h3>
+          <p>Signed, silent background updates via GitHub Releases. Stay current without manual downloads.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container">
+      <h2>Ready to get started?</h2>
+      <p>Download the latest release or build from source.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
+          Download v0.2.0
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager#install">
+          Build from source
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>MIT &copy; 2026 Mohammad Ashar Khan. Built on <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://tauri.app">Tauri</a>, and <a href="https://kit.svelte.dev">SvelteKit</a>.</p>
+    </div>
+  </footer>
+</body>
+</html>
