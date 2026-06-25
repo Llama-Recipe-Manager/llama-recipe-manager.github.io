@@ -4,529 +4,295 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Llama Recipe Manager — Native Desktop Launcher for llama-server</title>
-  <meta name="description" content="Save your llama.cpp invocations as named recipes, switch between them in one click." />
+  <meta name="description" content="A native desktop app to save, manage, and launch llama-server configurations as named recipes. Built with Tauri 2, Rust, and Svelte 5." />
   <meta property="og:title" content="Llama Recipe Manager" />
-  <meta property="og:description" content="Save your llama.cpp invocations as named recipes, switch between them in one click." />
+  <meta property="og:description" content="Save your llama.cpp invocations as named recipes, switch between them in one click. Built with Tauri 2, Rust, and Svelte 5." />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://llama-recipe-manager.github.io" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="icon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #050505;
-      --surface: rgba(255,255,255,0.03);
-      --border: rgba(255,255,255,0.06);
-      --text: #e5e5e5;
-      --text-dim: #666;
-      --accent: #24C8DB;
-      --purple: #a78bfa;
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#050505;
+      --surface:rgba(255,255,255,0.03);
+      --surface-hover:rgba(255,255,255,0.06);
+      --border:rgba(255,255,255,0.06);
+      --border-hover:rgba(255,255,255,0.12);
+      --text:#e5e5e5;
+      --text-dim:#888;
+      --text-muted:#555;
+      --accent:#24C8DB;
+      --accent-dim:rgba(36,200,219,0.08);
+      --purple:#a78bfa;
+      --green:#28c840;
+      --radius:12px;
+      --radius-sm:8px;
+      --radius-full:99px;
     }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
+    html{scroll-behavior:smooth}
+    body{
+      font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:var(--bg);color:var(--text);line-height:1.6;
+      min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased
     }
-
-    /* Background grid */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+    body::before{
+      content:'';position:fixed;inset:0;
       background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 60px 60px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Ambient glow */
-    body::after {
-      content: '';
-      position: fixed;
-      top: -40%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 800px;
-      background: radial-gradient(circle, rgba(36,200,219,0.06) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Nav */
-    nav {
-      padding: 24px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      color: var(--text);
-    }
-
-    .nav-brand img {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .nav-links a {
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    /* Hero */
-    .hero {
-      padding: 80px 0 100px;
-      text-align: center;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 16px;
-      border-radius: 99px;
-      font-size: 0.8rem;
-      background: rgba(36,200,219,0.08);
-      border: 1px solid rgba(36,200,219,0.15);
-      color: var(--accent);
-      margin-bottom: 32px;
-    }
-
-    .hero-badge::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .hero-icon {
-      width: 96px;
-      height: 96px;
-      border-radius: 24px;
-      margin: 0 auto 32px;
-      overflow: hidden;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 14px;
-    }
-
-    .hero-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .hero h1 {
-      font-size: 3.5rem;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 1.1;
-      margin-bottom: 20px;
-    }
-
-    .hero h1 .gradient {
-      background: linear-gradient(135deg, var(--accent), var(--purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero p {
-      font-size: 1.2rem;
-      color: var(--text-dim);
-      max-width: 500px;
-      margin: 0 auto 40px;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-    }
-
-    .btn-primary:hover {
-      background: #1fb8c9;
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover {
-      border-color: rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.05);
-    }
-
-    /* Tech stack */
-    .stack {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 40px;
-    }
-
-    .stack-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      padding: 4px 12px;
-      border-radius: 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-    }
-
-    /* Recipe visual */
-    .recipe-visual {
-      margin: 80px auto 0;
-      max-width: 700px;
-    }
-
-    .recipe-window {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .recipe-titlebar {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .recipe-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-    }
-
-    .recipe-dot:nth-child(1) { background: #ff5f57; }
-    .recipe-dot:nth-child(2) { background: #ffbd2e; }
-    .recipe-dot:nth-child(3) { background: #28c840; }
-
-    .recipe-body {
-      padding: 20px;
-      display: flex;
-      gap: 16px;
-    }
-
-    .recipe-sidebar {
-      width: 160px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .recipe-item {
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      color: var(--text-dim);
-      cursor: default;
-    }
-
-    .recipe-item.active {
-      background: rgba(36,200,219,0.1);
-      color: var(--accent);
-    }
-
-    .recipe-item .recipe-name {
-      font-weight: 500;
-      margin-bottom: 2px;
-    }
-
-    .recipe-item .recipe-meta {
-      font-size: 0.72rem;
-      opacity: 0.6;
-    }
-
-    .recipe-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .recipe-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .recipe-header h4 {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .recipe-run-btn {
-      padding: 6px 16px;
-      border-radius: 6px;
-      background: var(--accent);
-      color: #000;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-
-    .recipe-flags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .recipe-flag {
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-family: 'SF Mono', 'Fira Code', monospace;
-    }
-
-    .recipe-flag.highlight {
-      border-color: rgba(36,200,219,0.2);
-      color: var(--accent);
-      background: rgba(36,200,219,0.06);
-    }
-
-    .recipe-metrics {
-      display: flex;
-      gap: 16px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    .metric {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .metric-label {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .metric-value {
-      font-size: 0.9rem;
-      font-weight: 600;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-    }
-
-    .metric-value.green { color: #28c840; }
-    .metric-value.cyan { color: var(--accent); }
-
-    /* Features */
-    .features {
-      padding: 100px 0;
-    }
-
-    .features-header {
-      text-align: center;
-      margin-bottom: 56px;
-    }
-
-    .features-header h2 {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-    }
-
-    .features-header p {
-      color: var(--text-dim);
-      font-size: 1.05rem;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 28px;
-      transition: all 0.25s;
-    }
-
-    .feature-card:hover {
-      border-color: rgba(255,255,255,0.1);
-      transform: translateY(-2px);
-    }
-
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-bottom: 16px;
-      background: rgba(36,200,219,0.08);
-      border: 1px solid rgba(36,200,219,0.12);
-    }
-
-    .feature-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .feature-card p {
-      font-size: 0.88rem;
-      color: var(--text-dim);
-      line-height: 1.55;
-    }
-
-    /* Install */
-    .install {
-      padding: 80px 0 120px;
-    }
-
-    .install-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 48px;
-    }
-
-    .install-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-    }
-
-    .install-card .platform-icon {
-      font-size: 28px;
-      margin-bottom: 12px;
-    }
-
-    .install-card h4 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .install-card .formats {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-    }
-
-    .install-card .formats span {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      font-size: 0.72rem;
-      font-family: monospace;
-      margin: 2px 2px;
-    }
-
-    .install-actions {
-      text-align: center;
-    }
-
-    /* Footer */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 32px 0;
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 0.82rem;
-    }
-
-    footer a {
-      color: var(--text-dim);
-      text-decoration: underline;
-      text-decoration-color: rgba(255,255,255,0.1);
-    }
-
-    footer a:hover {
-      text-decoration-color: rgba(255,255,255,0.3);
-    }
-
-    @media (max-width: 768px) {
-      .hero h1 { font-size: 2.5rem; }
-      .features-grid { grid-template-columns: 1fr; }
-      .install-grid { grid-template-columns: 1fr; }
-      .recipe-sidebar { display: none; }
-    }
-
-    @media (max-width: 480px) {
-      .hero h1 { font-size: 2rem; }
-      .hero-actions { flex-direction: column; align-items: center; }
+        linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+      background-size:60px 60px;pointer-events:none;z-index:0
+    }
+    body::after{
+      content:'';position:fixed;top:-40%;left:50%;transform:translateX(-50%);
+      width:900px;height:900px;
+      background:radial-gradient(circle,rgba(36,200,219,0.05) 0%,transparent 60%);
+      pointer-events:none;z-index:0
+    }
+    .container{max-width:1000px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+    nav{padding:20px 0;display:flex;justify-content:space-between;align-items:center}
+    .nav-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:.95rem;text-decoration:none;color:var(--text)}
+    .nav-brand img{width:28px;height:28px;border-radius:6px}
+    .nav-links{display:flex;gap:24px;align-items:center}
+    .nav-links a{color:var(--text-dim);text-decoration:none;font-size:.9rem;transition:color .2s}
+    .nav-links a:hover{color:var(--text)}
+    .nav-links .btn-nav{
+      padding:6px 16px;border-radius:var(--radius-sm);
+      background:var(--accent);color:#000;
+      font-size:.85rem;font-weight:600;text-decoration:none;transition:all .2s
+    }
+    .nav-links .btn-nav:hover{background:#1fb8c9;transform:translateY(-1px)}
+
+    section{padding:80px 0}
+    .section-label{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 14px;border-radius:var(--radius-full);
+      font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+      background:var(--accent-dim);border:1px solid rgba(36,200,219,.15);color:var(--accent);
+      margin-bottom:20px
+    }
+    .section-title{
+      font-size:2.2rem;font-weight:800;letter-spacing:-.03em;line-height:1.15;
+      margin-bottom:16px
+    }
+    .section-desc{font-size:1.05rem;color:var(--text-dim);max-width:560px;line-height:1.65}
+
+    .hero{padding:60px 0 80px;text-align:center}
+    .hero-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 16px;border-radius:var(--radius-full);
+      font-size:.8rem;background:var(--accent-dim);
+      border:1px solid rgba(36,200,219,.15);color:var(--accent);margin-bottom:28px
+    }
+    .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+    .hero-icon{
+      width:80px;height:80px;border-radius:22px;margin:0 auto 28px;
+      overflow:hidden;background:var(--surface);border:1px solid var(--border);padding:12px
+    }
+    .hero-icon img{width:100%;height:100%;object-fit:contain}
+    .hero h1{font-size:3.8rem;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:16px}
+    .hero h1 .gradient{background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p{font-size:1.15rem;color:var(--text-dim);max-width:550px;margin:0 auto 32px;line-height:1.65}
+    .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:12px 28px;border-radius:var(--radius-sm);
+      font-size:.95rem;font-weight:600;text-decoration:none;transition:all .2s;cursor:pointer
+    }
+    .btn-primary{background:var(--accent);color:#000}
+    .btn-primary:hover{background:#1fb8c9;transform:translateY(-2px);box-shadow:0 8px 25px rgba(36,200,219,.25)}
+    .btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+    .btn-secondary:hover{border-color:var(--border-hover);background:var(--surface-hover);transform:translateY(-2px)}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btn-outline:hover{border-color:var(--border-hover);background:var(--surface-hover);transform:translateY(-2px)}
+
+    .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-bottom:16px}
+    .about-text .highlight{color:var(--accent);font-weight:500}
+    .about-text p{color:var(--text-dim);font-size:1rem;line-height:1.7;margin-bottom:16px}
+    .about-cards{display:flex;flex-direction:column;gap:12px}
+    .about-card{
+      display:flex;align-items:center;gap:14px;
+      padding:16px 20px;border-radius:var(--radius);
+      background:var(--surface);border:1px solid var(--border);transition:all .25s
+    }
+    .about-card:hover{border-color:var(--border-hover);transform:translateX(4px)}
+    .about-card-icon{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .about-card-icon svg{width:22px;height:22px}
+    .about-card-content h4{font-size:.9rem;font-weight:600;margin-bottom:2px}
+    .about-card-content p{font-size:.82rem;color:var(--text-dim);line-height:1.5}
+
+    .features-header{text-align:center;margin-bottom:48px}
+    .features-header .section-desc{margin:0 auto}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .feature-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:28px;transition:all .25s
+    }
+    .feature-card:hover{border-color:var(--border-hover);transform:translateY(-3px);background:var(--surface-hover)}
+    .feature-icon{
+      width:44px;height:44px;border-radius:11px;
+      display:flex;align-items:center;justify-content:center;
+      background:var(--accent-dim);border:1px solid rgba(36,200,219,.12);margin-bottom:16px
+    }
+    .feature-icon svg{width:22px;height:22px}
+    .feature-card h3{font-size:1rem;font-weight:600;margin-bottom:8px}
+    .feature-card p{font-size:.86rem;color:var(--text-dim);line-height:1.6}
+
+    .mockup-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .mockup-wrap{padding:40px 0;text-align:center}
+    .mockup-wrap .section-desc{margin:0 auto 40px}
+    .recipe-window{
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:var(--radius);overflow:hidden;max-width:760px;margin:0 auto;
+      box-shadow:0 20px 60px rgba(0,0,0,.4)
+    }
+    .recipe-titlebar{
+      padding:12px 16px;display:flex;align-items:center;gap:8px;
+      border-bottom:1px solid var(--border);background:var(--surface)
+    }
+    .recipe-dot{width:10px;height:10px;border-radius:50%}
+    .recipe-dot:nth-child(1){background:#ff5f57}
+    .recipe-dot:nth-child(2){background:#ffbd2e}
+    .recipe-dot:nth-child(3){background:#28c840}
+    .recipe-body{padding:20px;display:flex;gap:16px;text-align:left}
+    .recipe-sidebar{width:170px;flex-shrink:0;display:flex;flex-direction:column;gap:4px}
+    .recipe-item{
+      padding:9px 12px;border-radius:6px;font-size:.8rem;
+      color:var(--text-dim);cursor:default;transition:all .15s
+    }
+    .recipe-item.active{background:rgba(36,200,219,.08);color:var(--accent);border-left:2px solid var(--accent)}
+    .recipe-item .recipe-name{font-weight:500;margin-bottom:2px}
+    .recipe-item .recipe-meta{font-size:.7rem;opacity:.5}
+    .recipe-main{flex:1;display:flex;flex-direction:column;gap:14px}
+    .recipe-header{display:flex;justify-content:space-between;align-items:center}
+    .recipe-header h4{font-size:1rem;font-weight:600}
+    .recipe-header .status-tag{font-size:.7rem;color:var(--text-muted)}
+    .recipe-run-btn{
+      padding:6px 18px;border-radius:6px;
+      background:var(--accent);color:#000;font-size:.75rem;font-weight:700;letter-spacing:.02em
+    }
+    .recipe-flags{display:flex;flex-wrap:wrap;gap:6px}
+    .recipe-flag{
+      padding:4px 10px;border-radius:4px;font-size:.72rem;
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      color:var(--text-dim);font-family:'SF Mono','Fira Code','JetBrains Mono',monospace
+    }
+    .recipe-flag.highlight{border-color:rgba(36,200,219,.2);color:var(--accent);background:rgba(36,200,219,.06)}
+    .recipe-metrics{display:flex;gap:20px;padding-top:10px;border-top:1px solid var(--border)}
+    .metric{display:flex;flex-direction:column;gap:2px}
+    .metric-label{font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+    .metric-value{font-size:.85rem;font-weight:600;font-family:'SF Mono','Fira Code','JetBrains Mono',monospace}
+    .metric-value.green{color:var(--green)}
+    .metric-value.cyan{color:var(--accent)}
+
+    /* Architecture Visual */
+    .arch-section{background:var(--surface);border-bottom:1px solid var(--border)}
+    .arch-inner{padding:60px 0}
+    .arch-content{max-width:720px;margin:0 auto}
+    .arch-content .section-desc{margin-bottom:40px}
+    .arch-flow{display:flex;flex-direction:column;align-items:center;gap:0}
+    .arch-layer{
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:var(--radius);padding:20px 24px;width:100%;
+      position:relative
+    }
+    .arch-layer-header{
+      display:flex;align-items:center;gap:10px;margin-bottom:14px
+    }
+    .arch-layer-header .badge{
+      padding:3px 10px;border-radius:4px;
+      font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em
+    }
+    .arch-layer-header .badge.teal{background:rgba(36,200,219,.12);color:var(--accent)}
+    .arch-layer-header .badge.purple{background:rgba(167,139,250,.12);color:var(--purple)}
+    .arch-layer-header .badge.green{background:rgba(40,200,64,.12);color:var(--green)}
+    .arch-layer-header h4{font-size:.9rem;font-weight:600}
+    .arch-components{display:flex;gap:10px;flex-wrap:wrap}
+    .arch-comp{
+      padding:8px 14px;border-radius:6px;
+      font-size:.78rem;display:flex;align-items:center;gap:6px;
+      border:1px solid var(--border);background:var(--surface)
+    }
+    .arch-comp svg{width:14px;height:14px;flex-shrink:0}
+    .arch-comp .highlight-text{color:var(--accent);font-weight:500}
+    .arch-comp .purple-text{color:var(--purple);font-weight:500}
+    .arch-comp .green-text{color:var(--green);font-weight:500}
+    .arch-arrow{
+      display:flex;align-items:center;justify-content:center;
+      padding:6px 0;color:var(--text-muted);position:relative
+    }
+    .arch-arrow svg{width:18px;height:18px}
+    .arch-arrow .label{
+      position:absolute;right:0;font-size:.65rem;
+      color:var(--text-muted);letter-spacing:.03em
+    }
+    .arch-desc{
+      margin-top:28px;padding:16px 20px;
+      background:linear-gradient(135deg,rgba(167,139,250,.04),rgba(36,200,219,.04));
+      border:1px solid var(--border);border-radius:var(--radius-sm);
+      font-size:.85rem;color:var(--text-dim);line-height:1.7
+    }
+    .arch-desc strong{color:var(--text)}
+
+    .install-header{text-align:center;margin-bottom:48px}
+    .install-header .section-desc{margin:0 auto}
+    .install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px}
+    .install-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:28px 24px;text-align:center;transition:all .25s
+    }
+    .install-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+    .install-card .platform-icon{width:40px;height:40px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+    .install-card .platform-icon svg{width:32px;height:32px}
+    .install-card h4{font-size:.95rem;font-weight:600;margin-bottom:4px}
+    .install-card .platform-desc{font-size:.78rem;color:var(--text-muted);margin-bottom:12px}
+    .install-card .formats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+    .install-card .formats span{
+      display:inline-block;padding:3px 10px;border-radius:4px;
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      font-size:.7rem;font-family:monospace;color:var(--text-dim)
+    }
+    .install-actions{text-align:center;margin-top:24px}
+    .install-actions p{font-size:.85rem;color:var(--text-muted);margin-top:12px}
+    .install-actions code{
+      background:var(--surface);padding:2px 8px;border-radius:4px;
+      border:1px solid var(--border);font-size:.8rem;color:var(--text-dim)
+    }
+
+    .cta-section{text-align:center;padding:60px 0}
+    .cta-section h2{font-size:2rem;font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+    .cta-section p{color:var(--text-dim);margin-bottom:28px}
+
+    footer{border-top:1px solid var(--border);padding:36px 0}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px}
+    .footer-brand img{width:28px;height:28px;border-radius:6px;margin-bottom:10px}
+    .footer-brand p{font-size:.85rem;color:var(--text-muted);line-height:1.6;max-width:280px}
+    .footer-col h5{font-size:.85rem;font-weight:600;margin-bottom:12px;color:var(--text)}
+    .footer-col a{display:block;font-size:.82rem;color:var(--text-dim);text-decoration:none;padding:3px 0;transition:color .2s}
+    .footer-col a:hover{color:var(--accent)}
+    .footer-bottom{text-align:center;padding-top:24px;margin-top:24px;border-top:1px solid var(--border);font-size:.8rem;color:var(--text-muted)}
+    .footer-bottom a{color:var(--text-dim);text-decoration:underline;text-decoration-color:rgba(255,255,255,.1)}
+    .footer-bottom a:hover{color:var(--text);text-decoration-color:rgba(255,255,255,.3)}
+
+    @media(max-width:768px){
+      .hero h1{font-size:2.5rem}
+      .section-title{font-size:1.8rem}
+      .features-grid{grid-template-columns:1fr}
+      .install-grid{grid-template-columns:1fr;max-width:360px;margin:0 auto 32px}
+      .about-grid{grid-template-columns:1fr;gap:24px}
+      .recipe-sidebar{display:none}
+      .footer-grid{grid-template-columns:1fr;gap:24px}
+      .nav-links a:not(.btn-nav):not(.mobile-show){display:none}
+      .arch-comp{font-size:.72rem;padding:6px 10px}
+    }
+    @media(max-width:480px){
+      .hero h1{font-size:2rem}
+      .hero-actions{flex-direction:column;align-items:center}
+      .about-cards{gap:8px}
     }
   </style>
 </head>
@@ -538,136 +304,413 @@
         Llama Recipe Manager
       </a>
       <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
         <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">Source</a>
-        <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Releases</a>
+        <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases" class="btn-nav">Download</a>
       </div>
     </nav>
 
     <section class="hero">
       <div class="hero-badge">v0.2.0 — Latest Release</div>
-      <div class="hero-icon">
-        <img src="icon.png" alt="Llama Recipe Manager" />
-      </div>
+      <div class="hero-icon"><img src="icon.png" alt="Llama Recipe Manager" /></div>
       <h1><span class="gradient">Llama Recipe Manager</span></h1>
-      <p>Your llama-server configurations, saved as named recipes. Switch models and GPU layouts in one click — no flag juggling.</p>
+      <p>A native desktop launcher for <strong>llama-server</strong>. Save your configurations as named recipes, switch between models in one click — no flag juggling.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Download</a>
-        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">View Source</a>
-      </div>
-      <div class="stack">
-        <span class="stack-item">Rust</span>
-        <span class="stack-item">Tauri 2</span>
-        <span class="stack-item">Svelte 5</span>
-        <span class="stack-item">SQLite</span>
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          View Source
+        </a>
       </div>
     </section>
   </div>
 
-  <!-- Recipe visual mockup -->
-  <div class="container">
-    <div class="recipe-visual">
-      <div class="recipe-window">
-        <div class="recipe-titlebar">
-          <div class="recipe-dot"></div>
-          <div class="recipe-dot"></div>
-          <div class="recipe-dot"></div>
-        </div>
-        <div class="recipe-body">
-          <div class="recipe-sidebar">
-            <div class="recipe-item active">
-              <div class="recipe-name">🦙 Mistral 7B</div>
-              <div class="recipe-meta">8k context · 4-bit</div>
-            </div>
-            <div class="recipe-item">
-              <div class="recipe-name">🦙 Llama 3.3 70B</div>
-              <div class="recipe-meta">128k context · Q4</div>
-            </div>
-            <div class="recipe-item">
-              <div class="recipe-name">🦙 CodeLlama 13B</div>
-              <div class="recipe-meta">16k context · 8-bit</div>
-            </div>
-            <div class="recipe-item">
-              <div class="recipe-name">🦙 Gemma 2 9B</div>
-              <div class="recipe-meta">8k context · 4-bit</div>
-            </div>
-          </div>
-          <div class="recipe-main">
-            <div class="recipe-header">
-              <h4>Mistral 7B</h4>
-              <div class="recipe-run-btn">▶ Run</div>
-            </div>
-            <div class="recipe-flags">
-              <span class="recipe-flag highlight">--model ./models/mistral-7b.Q4_K_M.gguf</span>
-              <span class="recipe-flag">--ctx-size 8192</span>
-              <span class="recipe-flag">--gpu-layers 35</span>
-              <span class="recipe-flag">--mlock</span>
-              <span class="recipe-flag">--threads 8</span>
-              <span class="recipe-flag">--batch-size 512</span>
-            </div>
-            <div class="recipe-metrics">
-              <div class="metric">
-                <span class="metric-label">GPU</span>
-                <span class="metric-value green">72%</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">Memory</span>
-                <span class="metric-value cyan">5.2 GB</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">Speed</span>
-                <span class="metric-value green">42 tok/s</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">Temperature</span>
-                <span class="metric-value">0.7</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <section class="features">
+  <section class="mockup-section">
     <div class="container">
-      <div class="features-header">
-        <h2>Why this exists</h2>
-        <p>Stop memorizing flags. Start managing recipes.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">📦</div>
-          <h3>Named Recipes</h3>
-          <p>Save each llama-server invocation as a named recipe. Switch between Mistral, Llama, and CodeLlama setups with a single click.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
-          <h3>Your Data Stays Local</h3>
-          <p>No account. No telemetry. No network calls. Every recipe lives in a SQLite database on your machine — yours, and yours alone.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🛡️</div>
-          <h3>Safety by Default</h3>
-          <p>A flag deny-list blocks arguments that conflict with app-managed settings. Model paths are confined to your configured directory.</p>
+      <div class="mockup-wrap">
+        <div class="section-label">Live Preview</div>
+        <div class="section-title">One click to switch models</div>
+        <p class="section-desc">Save each llama-server configuration as a named recipe. Switch between Mistral, Llama, CodeLlama, or any GGUF model in a single click.</p>
+        <div class="recipe-window">
+          <div class="recipe-titlebar">
+            <span class="recipe-dot"></span>
+            <span class="recipe-dot"></span>
+            <span class="recipe-dot"></span>
+          </div>
+          <div class="recipe-body">
+            <div class="recipe-sidebar">
+              <div class="recipe-item active">
+                <div class="recipe-name">Mistral 7B</div>
+                <div class="recipe-meta">8k context · 4-bit</div>
+              </div>
+              <div class="recipe-item">
+                <div class="recipe-name">Llama 3.3 70B</div>
+                <div class="recipe-meta">128k context · Q4</div>
+              </div>
+              <div class="recipe-item">
+                <div class="recipe-name">CodeLlama 13B</div>
+                <div class="recipe-meta">16k context · 8-bit</div>
+              </div>
+              <div class="recipe-item">
+                <div class="recipe-name">Gemma 2 9B</div>
+                <div class="recipe-meta">8k context · 4-bit</div>
+              </div>
+              <div class="recipe-item">
+                <div class="recipe-name">DeepSeek 67B</div>
+                <div class="recipe-meta">32k context · Q3</div>
+              </div>
+            </div>
+            <div class="recipe-main">
+              <div class="recipe-header">
+                <h4>Mistral 7B</h4>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <span class="status-tag">● Running</span>
+                  <div class="recipe-run-btn">■ Stop</div>
+                </div>
+              </div>
+              <div class="recipe-flags">
+                <span class="recipe-flag highlight">--model ./models/mistral-7b.Q4_K_M.gguf</span>
+                <span class="recipe-flag">--ctx-size 8192</span>
+                <span class="recipe-flag">--gpu-layers 35</span>
+                <span class="recipe-flag">--mlock</span>
+                <span class="recipe-flag">--threads 8</span>
+                <span class="recipe-flag">--batch-size 512</span>
+                <span class="recipe-flag">--temp 0.7</span>
+              </div>
+              <div class="recipe-metrics">
+                <div class="metric">
+                  <span class="metric-label">GPU</span>
+                  <span class="metric-value green">72%</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Memory</span>
+                  <span class="metric-value cyan">5.2 GB</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Speed</span>
+                  <span class="metric-value green">42 tok/s</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Temperature</span>
+                  <span class="metric-value">0.7</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Context</span>
+                  <span class="metric-value cyan">1.2k / 8k</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="install">
+  <section id="about">
     <div class="container">
+      <div class="about-grid">
+        <div class="about-text">
+          <div class="section-label">Overview</div>
+          <h2 class="section-title">What is Llama Recipe Manager?</h2>
+          <p>A native desktop application that lets you save, organize, and launch <span class="highlight">llama-server</span> (llama.cpp) configurations as named <span class="highlight">recipes</span>.</p>
+          <p>Instead of remembering long CLI flags or editing shell scripts every time you want to switch models, you create recipes once and launch them with one click. The app manages the server process, shows live metrics, and keeps your data local.</p>
+          <p>Built with <span class="highlight">Tauri 2</span>, <span class="highlight">Rust</span>, and <span class="highlight">Svelte 5</span> — it's fast, lightweight, and secure.</p>
+        </div>
+        <div class="about-cards">
+          <div class="about-card">
+            <div class="about-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div class="about-card-content">
+              <h4>Recipe-First Workflow</h4>
+              <p>Name your configurations, set the flags once, and launch with a single click.</p>
+            </div>
+          </div>
+          <div class="about-card">
+            <div class="about-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <div class="about-card-content">
+              <h4>Live Server Metrics</h4>
+              <p>Monitor GPU usage, memory, tokens/sec, and context utilization in real time.</p>
+            </div>
+          </div>
+          <div class="about-card">
+            <div class="about-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="about-card-content">
+              <h4>Process Management</h4>
+              <p>Start and stop llama-server from the UI with full log visibility and status indicators.</p>
+            </div>
+          </div>
+          <div class="about-card">
+            <div class="about-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="about-card-content">
+              <h4>Local & Private</h4>
+              <p>No accounts, no telemetry, no network calls. Your data stays in a local SQLite database.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" style="padding-bottom:40px">
+    <div class="container">
+      <div class="features-header">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Everything you need to manage llama-server</h2>
+        <p class="section-desc">Designed for developers and AI enthusiasts who work with multiple GGUF models daily.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <h3>Named Recipes</h3>
+          <p>Save each llama-server invocation as a named recipe with all flags. Switch between Mistral, Llama, CodeLlama, and more with one click.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <h3>Live Metrics Dashboard</h3>
+          <p>Real-time GPU utilization, memory consumption, tokens-per-second, and context usage displayed alongside your running recipe.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3>Safety by Default</h3>
+          <p>A flag deny-list blocks dangerous or conflicting arguments. Model paths are confined to your configured directory. Inputs are validated.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h3>Local-First Storage</h3>
+          <p>No accounts, no telemetry, no network calls. Every recipe lives in a SQLite database on your machine — private and yours alone.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          <h3>Process Management</h3>
+          <p>Start and stop llama-server from within the app. Full logs, status indicators, and automatic cleanup when you quit.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+              <rect x="9" y="9" width="6" height="6"/>
+              <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+              <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+              <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+              <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+            </svg>
+          </div>
+          <h3>GPU Configuration</h3>
+          <p>Set GPU layers, compute type, and backend options per-recipe. Support for CUDA, Metal, Vulkan, and SYCL backends.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+          </div>
+          <h3>One-Click Switching</h3>
+          <p>Stop the current server and launch a new recipe instantly. No need to remember or retype CLI arguments.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </div>
+          <h3>Auto-Updater</h3>
+          <p>Built-in Tauri updater plugin ensures you always have the latest version with automatic update notifications.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <h3>Cross-Platform</h3>
+          <p>Available on macOS (.dmg), Linux (.deb, .rpm, .AppImage, AUR), and Windows (.msi, .exe). Same experience everywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="arch-section">
+    <div class="container">
+      <div class="arch-inner">
+        <div class="arch-content">
+          <div class="section-label" style="text-align:center">Architecture</div>
+          <h2 class="section-title" style="text-align:center">How it works</h2>
+          <p class="section-desc" style="text-align:center">A clean three-layer architecture with Tauri 2 bridging a Svelte 5 frontend and a Rust backend.</p>
+
+          <div class="arch-flow">
+            <div class="arch-layer">
+              <div class="arch-layer-header">
+                <span class="badge purple">Layer 1</span>
+                <h4>Svelte 5 Frontend</h4>
+              </div>
+              <div class="arch-components">
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  UI Components
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                  Stores (runes)
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                  <span class="highlight-text">Tauri Bridge</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            </div>
+
+            <div class="arch-layer">
+              <div class="arch-layer-header">
+                <span class="badge teal">Layer 2</span>
+                <h4>Tauri 2 · Rust Backend</h4>
+              </div>
+              <div class="arch-components">
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                  <span class="highlight-text">IPC Commands</span>
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                  <span class="purple-text">SQLite DB</span>
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span class="green-text">Validation</span>
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  Process Manager
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            </div>
+
+            <div class="arch-layer">
+              <div class="arch-layer-header">
+                <span class="badge green">Layer 3</span>
+                <h4>llama-server (llama.cpp)</h4>
+              </div>
+              <div class="arch-components">
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  GGUF Models
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+                  GPU Backends
+                </div>
+                <div class="arch-comp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                  REST API
+                </div>
+              </div>
+              <div class="arch-desc">
+                <strong>Data flow:</strong> The frontend calls Tauri IPC commands → Rust backend queries SQLite, applies validation, then spawns/manages the llama-server process → the server loads GGUF models and serves the REST API.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="container">
+      <div class="install-header">
+        <div class="section-label">Download</div>
+        <h2 class="section-title">Available on every platform</h2>
+        <p class="section-desc">Download the latest release for your operating system. No accounts, no sign-ups, no telemetry.</p>
+      </div>
       <div class="install-grid">
         <div class="install-card">
-          <div class="platform-icon">🍎</div>
+          <div class="platform-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7.5 9.5c0-.552.448-1 1-1h7c.552 0 1 .448 1 1v5c0 .552-.448 1-1 1h-7c-.552 0-1-.448-1-1v-5z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M9.5 8.5v-1a2.5 2.5 0 015 0v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <h4>macOS</h4>
+          <p class="platform-desc">Intel &amp; Apple Silicon</p>
           <div class="formats">
             <span>.dmg</span>
             <span>.tar.gz</span>
           </div>
         </div>
         <div class="install-card">
-          <div class="platform-icon">🐧</div>
+          <div class="platform-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="12" cy="11" r="3.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M12 4V2M12 20v2M4 11H2M22 11h-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M6.34 6.34L4.93 4.93M17.66 17.66l1.41 1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <h4>Linux</h4>
+          <p class="platform-desc">Debian, RPM &amp; AUR</p>
           <div class="formats">
             <span>.deb</span>
             <span>.rpm</span>
@@ -675,8 +718,17 @@
           </div>
         </div>
         <div class="install-card">
-          <div class="platform-icon">🪟</div>
+          <div class="platform-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 9h18M9 5v14" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="5.5" y="11" width="2" height="2" rx=".3" fill="currentColor"/>
+              <rect x="8.5" y="11" width="2" height="2" rx=".3" fill="currentColor"/>
+              <rect x="11.5" y="11" width="2" height="2" rx=".3" fill="currentColor"/>
+            </svg>
+          </div>
           <h4>Windows</h4>
+          <p class="platform-desc">x86_64</p>
           <div class="formats">
             <span>.msi</span>
             <span>.exe</span>
@@ -684,14 +736,51 @@
         </div>
       </div>
       <div class="install-actions">
-        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Download v0.2.0</a>
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download v0.2.0
+        </a>
+        <p>or install from source: <code>git clone ... &amp;&amp; bun install &amp;&amp; bun run tauri build</code></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to stop juggling flags?</h2>
+      <p>Start managing your llama-server configurations as named recipes today.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Download Now</a>
+        <a class="btn btn-outline" href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">View on GitHub</a>
       </div>
     </div>
   </section>
 
   <footer>
     <div class="container">
-      <p>MIT &copy; 2026 Mohammad Ashar Khan — Built on <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>, <a href="https://tauri.app">Tauri</a>, <a href="https://kit.svelte.dev">SvelteKit</a></p>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="icon.png" alt="Llama Recipe Manager" />
+          <p>A native desktop app to manage and launch llama-server configurations as named recipes, built with Tauri 2, Rust, and Svelte 5.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Resources</h5>
+          <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager">Source Code</a>
+          <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Downloads</a>
+          <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/releases">Changelog</a>
+          <a href="https://github.com/Llama-Recipe-Manager/llama-recipe-manager/blob/main/CONTRIBUTING.md">Contributing</a>
+        </div>
+        <div class="footer-col">
+          <h5>Built On</h5>
+          <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>
+          <a href="https://tauri.app">Tauri 2</a>
+          <a href="https://kit.svelte.dev">SvelteKit</a>
+          <a href="https://www.sqlite.org">SQLite</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>MIT &copy; 2026 <a href="https://github.com/anomalyco">Mohammad Ashar Khan</a></p>
+      </div>
     </div>
   </footer>
 </body>
